@@ -285,7 +285,13 @@ export namespace LLM {
       }
     })()
 
-    return { ...stream, fullStream }
+    const result = Object.create(stream)
+    Object.defineProperty(result, "fullStream", {
+      value: fullStream,
+      enumerable: true,
+      configurable: true,
+    })
+    return result as StreamOutput
   }
 
   async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user">) {
