@@ -190,7 +190,7 @@ export namespace LLM {
       type: "stream",
     }
 
-    const call = {
+    const call: Parameters<typeof streamText>[0] = {
       onError(error) {
         l.error("stream error", {
           error,
