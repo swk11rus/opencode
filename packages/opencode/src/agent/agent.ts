@@ -332,19 +332,19 @@ export namespace Agent {
         }),
         onError: () => {},
       }
-      await Plugin.trigger("llm.request.before", { ...ctx, type: "stream" }, { params: call })
-      const result = streamObject(call)
+      const { params: callParams } = await Plugin.trigger("llm.request.before", { ...ctx, type: "stream" }, { params: call })
+      const result = streamObject(callParams)
       for await (const part of result.fullStream) {
-        await Plugin.trigger("llm.stream.chunk", { ...ctx, type: "stream" }, { part })
-        if (part.type === "error") throw part.error
+        const { part: next } = await Plugin.trigger("llm.stream.chunk", { ...ctx, type: "stream" }, { part })
+        if (next.type === "error") throw next.error
       }
-      await Plugin.trigger("llm.response.after", { ...ctx, type: "stream" }, { result: result.object })
-      return result.object
+      const { result: finalResult } = await Plugin.trigger("llm.response.after", { ...ctx, type: "stream" }, { result: result.object })
+      return finalResult
     }
 
-    await Plugin.trigger("llm.request.before", { ...ctx, type: "generate" }, { params })
-    const result = await generateObject(params)
-    await Plugin.trigger("llm.response.after", { ...ctx, type: "generate" }, { result: result.object })
-    return result.object
+    const { params: callParams } = await Plugin.trigger("llm.request.before", { ...ctx, type: "generate" }, { params })
+    const result = await generateObject(callParams)
+    const { result: finalResult } = await Plugin.trigger("llm.response.after", { ...ctx, type: "generate" }, { result: result.object })
+    return finalResult
   }
 }

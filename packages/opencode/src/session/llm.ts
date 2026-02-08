@@ -274,14 +274,14 @@ export namespace LLM {
       },
     }
 
-    await Plugin.trigger("llm.request.before", ctx, { params: call })
+    const { params: callParams } = await Plugin.trigger("llm.request.before", ctx, { params: call })
 
-    const stream = await streamText(call)
+    const stream = await streamText(callParams)
     const full = stream.fullStream
     const fullStream = (async function* () {
       for await (const part of full) {
-        await Plugin.trigger("llm.stream.chunk", ctx, { part })
-        yield part
+        const { part: next } = await Plugin.trigger("llm.stream.chunk", ctx, { part })
+        yield next
       }
     })()
 
