@@ -40,8 +40,23 @@ const transportCalls: Array<{
 mock.module("@modelcontextprotocol/sdk/client/streamableHttp.js", () => ({
   StreamableHTTPClientTransport: class MockStreamableHTTP {
     url: string
-    authProvider: { redirectToAuthorization?: (url: URL) => Promise<void> } | undefined
-    constructor(url: URL, options?: { authProvider?: { redirectToAuthorization?: (url: URL) => Promise<void> } }) {
+    authProvider:
+      | {
+          redirectToAuthorization?: (url: URL) => Promise<void>
+          saveState?: (state: string) => Promise<void>
+          saveCodeVerifier?: (verifier: string) => Promise<void>
+        }
+      | undefined
+    constructor(
+      url: URL,
+      options?: {
+        authProvider?: {
+          redirectToAuthorization?: (url: URL) => Promise<void>
+          saveState?: (state: string) => Promise<void>
+          saveCodeVerifier?: (verifier: string) => Promise<void>
+        }
+      },
+    ) {
       this.url = url.toString()
       this.authProvider = options?.authProvider
       transportCalls.push({
@@ -52,6 +67,12 @@ mock.module("@modelcontextprotocol/sdk/client/streamableHttp.js", () => ({
     }
     async start() {
       // Simulate OAuth redirect by calling the authProvider's redirectToAuthorization
+      if (this.authProvider?.saveState) {
+        await this.authProvider.saveState("test-oauth-state")
+      }
+      if (this.authProvider?.saveCodeVerifier) {
+        await this.authProvider.saveCodeVerifier("test-code-verifier")
+      }
       if (this.authProvider?.redirectToAuthorization) {
         await this.authProvider.redirectToAuthorization(new URL("https://auth.example.com/authorize?client_id=test"))
       }
@@ -90,6 +111,14 @@ mock.module("@modelcontextprotocol/sdk/client/index.js", () => ({
 // Mock UnauthorizedError in the auth module
 mock.module("@modelcontextprotocol/sdk/client/auth.js", () => ({
   UnauthorizedError: MockUnauthorizedError,
+}))
+
+mock.module("../../src/mcp/oauth-callback", () => ({
+  McpOAuthCallback: {
+    ensureRunning: async () => {},
+    waitForCallback: async (_state: string) => "test-code",
+    stop: async () => {},
+  },
 }))
 
 beforeEach(() => {

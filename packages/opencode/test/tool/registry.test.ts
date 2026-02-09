@@ -94,6 +94,19 @@ describe("tool.registry", () => {
           }),
         )
 
+        const cowsayDir = path.join(opencodeDir, "node_modules", "cowsay")
+        await fs.mkdir(cowsayDir, { recursive: true })
+        await Bun.write(
+          path.join(cowsayDir, "package.json"),
+          JSON.stringify({
+            name: "cowsay",
+            version: "0.0.0-test",
+            type: "module",
+            main: "./index.js",
+          }),
+        )
+        await Bun.write(path.join(cowsayDir, "index.js"), "export const say = ({ text }) => text\n")
+
         await Bun.write(
           path.join(toolsDir, "cowsay.ts"),
           [

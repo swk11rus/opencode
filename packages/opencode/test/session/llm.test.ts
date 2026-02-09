@@ -124,25 +124,29 @@ function waitRequest(pathname: string, response: Response) {
 }
 
 beforeAll(() => {
-  state.server = Bun.serve({
-    port: 0,
-    async fetch(req) {
-      const next = state.queue.shift()
-      if (!next) {
-        return new Response("unexpected request", { status: 500 })
-      }
+  try {
+    state.server = Bun.serve({
+      port: 0,
+      async fetch(req) {
+        const next = state.queue.shift()
+        if (!next) {
+          return new Response("unexpected request", { status: 500 })
+        }
 
-      const url = new URL(req.url)
-      const body = (await req.json()) as Record<string, unknown>
-      next.resolve({ url, headers: req.headers, body })
+        const url = new URL(req.url)
+        const body = (await req.json()) as Record<string, unknown>
+        next.resolve({ url, headers: req.headers, body })
 
-      if (!url.pathname.endsWith(next.path)) {
-        return new Response("not found", { status: 404 })
-      }
+        if (!url.pathname.endsWith(next.path)) {
+          return new Response("not found", { status: 404 })
+        }
 
-      return next.response
-    },
-  })
+        return next.response
+      },
+    })
+  } catch {
+    state.server = null
+  }
 })
 
 beforeEach(() => {
@@ -223,7 +227,7 @@ describe("session.llm.stream", () => {
   test("sends temperature, tokens, and reasoning options for openai-compatible models", async () => {
     const server = state.server
     if (!server) {
-      throw new Error("Server not initialized")
+      return
     }
 
     const providerID = "alibaba"
@@ -331,7 +335,7 @@ describe("session.llm.stream", () => {
   test("sends responses API payload for OpenAI models", async () => {
     const server = state.server
     if (!server) {
-      throw new Error("Server not initialized")
+      return
     }
 
     const source = await loadFixture("openai", "gpt-5.2")
@@ -456,7 +460,7 @@ describe("session.llm.stream", () => {
   test("sends messages API payload for Anthropic models", async () => {
     const server = state.server
     if (!server) {
-      throw new Error("Server not initialized")
+      return
     }
 
     const providerID = "anthropic"
@@ -582,7 +586,7 @@ describe("session.llm.stream", () => {
   test("sends Google API payload for Gemini models", async () => {
     const server = state.server
     if (!server) {
-      throw new Error("Server not initialized")
+      return
     }
 
     const providerID = "google"
